@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nameless — Goblin Fight</title>
+  <style>
+    :root {
+      --ink: #efe2c8;
+      --muted: #c6b89d;
+      --bronze: #9c7747;
+      --bronze-light: #d0aa70;
+      --panel: rgba(19, 18, 15, .88);
+      --panel-soft: rgba(23, 22, 18, .72);
+      --red: #9c2d23;
+      --red-bright: #c64335;
+      --track: #241713;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background: #0c0d0b;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.42)),
+        url("forest-battle-bg.jpg") center / cover no-repeat fixed;
+    }
+
+    .battle {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .hud-row {
+      display: grid;
+      grid-template-columns: minmax(250px, 1fr) minmax(130px, 220px) minmax(250px, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .fighter-card,
+    .center-card,
+    .combat-panel {
+      background: var(--panel);
+      border: 2px solid var(--bronze);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.06),
+        0 10px 28px rgba(0,0,0,.35);
+    }
+
+    .fighter-card {
+      padding: 12px 14px 14px;
+    }
+
+    .fighter-card.enemy {
+      text-align: right;
+    }
+
+    .fighter-name {
+      font-size: clamp(1.15rem, 2vw, 1.65rem);
+      letter-spacing: .05em;
+      margin-bottom: 8px;
+    }
+
+    .hp-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 5px;
+    }
+
+    .enemy .hp-label {
+      flex-direction: row-reverse;
+    }
+
+    .hp-track {
+      height: 22px;
+      border: 1px solid #6f5434;
+      border-radius: 5px;
+      overflow: hidden;
+      background: var(--track);
+    }
+
+    .hp-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(#bf4438, #8d241c);
+      transition: width 420ms ease;
+    }
+
+    .center-card {
+      text-align: center;
+      padding: 10px 12px;
+      background: rgba(17, 16, 14, .86);
+    }
+
+    .place-name {
+      letter-spacing: .08em;
+      font-size: 1.1rem;
+    }
+
+    .turn {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .arena {
+      position: relative;
+      min-height: 470px;
+      overflow: hidden;
+    }
+
+    .character {
+      position: absolute;
+      bottom: 0;
+      width: min(34vw, 470px);
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 12px rgba(0,0,0,.7));
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .hero {
+      left: 3%;
+      transform: scaleX(1);
+    }
+
+    .goblin {
+      right: 4%;
+      width: min(31vw, 430px);
+    }
+
+    .action-zone {
+      position: absolute;
+      left: 50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    #attackButton {
+      min-width: 210px;
+      padding: 15px 28px;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1.35rem;
+      letter-spacing: .1em;
+      cursor: pointer;
+      border: 2px solid var(--bronze-light);
+      border-radius: 10px;
+      background: linear-gradient(#263447, #17212e);
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,.25),
+        0 7px 20px rgba(0,0,0,.55);
+    }
+
+    #attackButton:hover:not(:disabled) {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+    }
+
+    #attackButton:disabled {
+      cursor: default;
+      opacity: .75;
+    }
+
+    .dice-hint {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: .83rem;
+      text-shadow: 0 2px 4px #000;
+    }
+
+    .bottom-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .combat-panel {
+      padding: 13px 16px;
+      min-height: 132px;
+    }
+
+    .combat-heading {
+      color: var(--bronze-light);
+      font-size: .88rem;
+      letter-spacing: .12em;
+      margin-bottom: 8px;
+    }
+
+    #combatLog {
+      display: grid;
+      gap: 5px;
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .hit { color: #f0dfbf; }
+    .miss { color: #bcb3a5; font-style: italic; }
+    .victory { color: #efd18c; font-weight: bold; }
+    .defeat { color: #e59d91; font-weight: bold; }
+
+    .side-buttons {
+      display: grid;
+      gap: 10px;
+    }
+
+    .side-buttons button,
+    .side-buttons a {
+      display: grid;
+      place-items: center;
+      min-height: 58px;
+      padding: 10px;
+      font: inherit;
+      color: var(--ink);
+      background: rgba(22, 21, 18, .92);
+      border: 2px solid var(--bronze);
+      border-radius: 10px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .side-buttons button:hover,
+    .side-buttons a:hover {
+      background: rgba(52, 45, 34, .95);
+    }
+
+    .flash-hit {
+      animation: flash .23s ease;
+    }
+
+    @keyframes flash {
+      0% { filter: drop-shadow(0 16px 12px rgba(0,0,0,.7)); }
+      45% { filter: brightness(1.7) sepia(.4) drop-shadow(0 0 18px rgba(255,255,255,.55)); }
+      100% { filter: drop-shadow(0 16px 12px rgba(0,0,0,.7)); }
+    }
+
+    @media (max-width: 760px) {
+      .battle { padding: 8px; }
+      .hud-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .center-card {
+        grid-column: 1 / -1;
+        grid-row: 1;
+      }
+      .arena { min-height: 390px; }
+      .character { width: 47vw; }
+      .goblin { width: 44vw; }
+      .hero { left: -7%; }
+      .goblin { right: -7%; }
+      .action-zone { bottom: 2%; }
+      .bottom-row { grid-template-columns: 1fr; }
+      .side-buttons {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="battle">
+
+    <section class="hud-row">
+      <div class="fighter-card">
+        <div class="fighter-name">THE NAMELESS</div>
+        <div class="hp-label">
+          <span>HP</span>
+          <span id="heroHpText">40 / 40</span>
+        </div>
+        <div class="hp-track">
+          <div id="heroHpBar" class="hp-fill"></div>
+        </div>
+      </div>
+
+      <div class="center-card">
+        <div class="place-name">FOREST PATH</div>
+        <div id="turnText" class="turn">TURN 1</div>
+      </div>
+
+      <div class="fighter-card enemy">
+        <div class="fighter-name">GOBLIN</div>
+        <div class="hp-label">
+          <span>HP</span>
+          <span id="goblinHpText">12 / 12</span>
+        </div>
+        <div class="hp-track">
+          <div id="goblinHpBar" class="hp-fill"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="arena">
+      <img id="heroImage" class="character hero" src="nameless.png" alt="The Nameless">
+      <img id="goblinImage" class="character goblin" src="goblin.png" alt="A low-level goblin">
+
+      <div class="action-zone">
+        <button id="attackButton" type="button">🎲 ROLL TO ATTACK</button>
+        <div class="dice-hint">d20 to hit · 10+ succeeds</div>
+      </div>
+    </section>
+
+    <section class="bottom-row">
+      <div class="combat-panel">
+        <div class="combat-heading">COMBAT LOG</div>
+        <div id="combatLog" aria-live="polite">
+          <div>The goblin blocks the forest path.</div>
+          <div>Roll to attack.</div>
+        </div>
+      </div>
+
+      <div class="side-buttons">
+        <button id="restartButton" type="button">RESTART</button>
+        <a href="index.html">MENU</a>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const HERO_MAX_HP = 40;
+    const GOBLIN_MAX_HP = 12;
+
+    const HERO_DEFENSE = 10;
+    const GOBLIN_DEFENSE = 10;
+
+    const HERO_DAMAGE_DIE = 8;
+    const GOBLIN_DAMAGE_DIE = 6;
+
+    let heroHp = HERO_MAX_HP;
+    let goblinHp = GOBLIN_MAX_HP;
+    let turn = 1;
+    let fightOver = false;
+
+    const attackButton = document.getElementById("attackButton");
+    const restartButton = document.getElementById("restartButton");
+
+    const heroHpText = document.getElementById("heroHpText");
+    const goblinHpText = document.getElementById("goblinHpText");
+    const heroHpBar = document.getElementById("heroHpBar");
+    const goblinHpBar = document.getElementById("goblinHpBar");
+    const turnText = document.getElementById("turnText");
+    const combatLog = document.getElementById("combatLog");
+    const heroImage = document.getElementById("heroImage");
+    const goblinImage = document.getElementById("goblinImage");
+
+    function rollDie(sides) {
+      return Math.floor(Math.random() * sides) + 1;
+    }
+
+    function updateHud() {
+      heroHpText.textContent = `${heroHp} / ${HERO_MAX_HP}`;
+      goblinHpText.textContent = `${goblinHp} / ${GOBLIN_MAX_HP}`;
+
+      heroHpBar.style.width = `${(heroHp / HERO_MAX_HP) * 100}%`;
+      goblinHpBar.style.width = `${(goblinHp / GOBLIN_MAX_HP) * 100}%`;
+
+      turnText.textContent = `TURN ${turn}`;
+    }
+
+    function showLog(lines) {
+      combatLog.innerHTML = "";
+      for (const line of lines) {
+        const div = document.createElement("div");
+        div.textContent = line.text;
+        if (line.className) div.className = line.className;
+        combatLog.appendChild(div);
+      }
+    }
+
+    function flashCharacter(element) {
+      element.classList.remove("flash-hit");
+      void element.offsetWidth;
+      element.classList.add("flash-hit");
+    }
+
+    function finishFight(result, lines) {
+      fightOver = true;
+      attackButton.disabled = true;
+
+      if (result === "victory") {
+        attackButton.textContent = "VICTORY";
+        lines.push({ text: "The goblin falls. The path is clear.", className: "victory" });
+      } else {
+        attackButton.textContent = "DEFEAT";
+        lines.push({ text: "The Nameless has fallen.", className: "defeat" });
+      }
+
+      updateHud();
+      showLog(lines);
+    }
+
+    function takeTurn() {
+      if (fightOver) return;
+
+      const lines = [];
+
+      // HERO: d20 to hit
+      const heroToHit = rollDie(20);
+      lines.push({ text: `The Nameless rolls ${heroToHit} on the d20.` });
+
+      if (heroToHit >= GOBLIN_DEFENSE) {
+        const heroDamage = rollDie(HERO_DAMAGE_DIE);
+        goblinHp = Math.max(0, goblinHp - heroDamage);
+        lines.push({ text: `HIT — the sword deals ${heroDamage} damage.`, className: "hit" });
+        flashCharacter(goblinImage);
+        updateHud();
+
+        if (goblinHp <= 0) {
+          finishFight("victory", lines);
+          return;
+        }
+      } else {
+        lines.push({ text: "MISS — the goblin slips away from the blade.", className: "miss" });
+      }
+
+      // GOBLIN: d20 to hit
+      const goblinToHit = rollDie(20);
+      lines.push({ text: `The Goblin rolls ${goblinToHit} on the d20.` });
+
+      if (goblinToHit >= HERO_DEFENSE) {
+        const goblinDamage = rollDie(GOBLIN_DAMAGE_DIE);
+        heroHp = Math.max(0, heroHp - goblinDamage);
+        lines.push({ text: `HIT — the goblin deals ${goblinDamage} damage.`, className: "hit" });
+        flashCharacter(heroImage);
+        updateHud();
+
+        if (heroHp <= 0) {
+          finishFight("defeat", lines);
+          return;
+        }
+      } else {
+        lines.push({ text: "MISS — the goblin's attack goes wide.", className: "miss" });
+      }
+
+      turn += 1;
+      updateHud();
+      showLog(lines);
+    }
+
+    function resetFight() {
+      heroHp = HERO_MAX_HP;
+      goblinHp = GOBLIN_MAX_HP;
+      turn = 1;
+      fightOver = false;
+
+      attackButton.disabled = false;
+      attackButton.textContent = "🎲 ROLL TO ATTACK";
+
+      updateHud();
+      showLog([
+        { text: "The goblin blocks the forest path." },
+        { text: "Roll to attack." }
+      ]);
+    }
+
+    attackButton.addEventListener("click", takeTurn);
+    restartButton.addEventListener("click", resetFight);
+
+    updateHud();
+  </script>
+</body>
+</html>
