@@ -247,6 +247,54 @@
       animation: flash .23s ease;
     }
 
+    .damage-number {
+  position: absolute;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #f0c28a;
+  text-shadow:
+    0 2px 3px rgba(0,0,0,.9),
+    0 0 8px rgba(120,20,10,.8);
+  pointer-events: none;
+  opacity: 0;
+}
+
+    #heroDamage {
+      left: 28%;
+      top: 38%;
+    }
+
+    #goblinDamage {
+      right: 22%;
+      top: 38%;
+    }
+
+.damage-pop {
+  animation: damagePop 700ms ease-out forwards;
+}
+
+.miss-pop {
+  color: #d7d0c2;
+  font-style: italic;
+  animation: damagePop 700ms ease-out forwards;
+}
+
+@keyframes damagePop {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(.8);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-45px) scale(1);
+  }
+}
     @keyframes flash {
       0% { 
         filter: drop-shadow(0 16px 12px rgba(0,0,0,.7));
@@ -330,6 +378,9 @@
       <img id="heroImage" class="character hero" src="nameless.png" alt="The Nameless">
       <img id="goblinImage" class="character goblin" src="goblin.png" alt="A low-level goblin">
 
+      <div id="heroDamage" class="damage-number"></div>
+      <div id="goblinDamage" class="damage-number"></div>
+
       <div class="action-zone">
         <button id="attackButton" type="button">🎲 ROLL TO ATTACK</button>
         <div class="dice-hint">d20 to hit · 10+ succeeds</div>
@@ -379,6 +430,8 @@
     const combatLog = document.getElementById("combatLog");
     const heroImage = document.getElementById("heroImage");
     const goblinImage = document.getElementById("goblinImage");
+    const heroDamageText = document.getElementById("heroDamage");
+    const goblinDamageText = document.getElementById("goblinDamage");
 
     function rollDie(sides) {
       return Math.floor(Math.random() * sides) + 1;
@@ -408,6 +461,20 @@
       element.classList.remove("flash-hit");
       void element.offsetWidth;
       element.classList.add("flash-hit");
+    }
+
+    function showDamage(element, amount) {
+      element.textContent = `-${amount}`;
+      element.classList.remove("damage-pop", "miss-pop");
+      void element.offsetWidth;
+      element.classList.add("damage-pop");
+    }
+
+    function showMiss(element) {
+      element.textContent = "MISS";
+      element.classList.remove("damage-pop", "miss-pop");
+      void element.offsetWidth;
+      element.classList.add("miss-pop");
     }
 
     function finishFight(result, lines) {
@@ -440,6 +507,7 @@
         goblinHp = Math.max(0, goblinHp - heroDamage);
         lines.push({ text: `HIT — the sword deals ${heroDamage} damage.`, className: "hit" });
         flashCharacter(goblinImage);
+        showDamage(goblinDamageText, heroDamage);
         updateHud();
 
         if (goblinHp <= 0) {
@@ -448,6 +516,7 @@
         }
       } else {
         lines.push({ text: "MISS — the goblin slips away from the blade.", className: "miss" });
+        showMiss(goblinDamageText);
       }
 
       // GOBLIN: d20 to hit
@@ -459,6 +528,7 @@
         heroHp = Math.max(0, heroHp - goblinDamage);
         lines.push({ text: `HIT — the goblin deals ${goblinDamage} damage.`, className: "hit" });
         flashCharacter(heroImage);
+        showDamage(heroDamageText, goblinDamage);
         updateHud();
 
         if (heroHp <= 0) {
@@ -467,6 +537,7 @@
         }
       } else {
         lines.push({ text: "MISS — the goblin's attack goes wide.", className: "miss" });
+        showMiss(heroDamageText);
       }
 
       turn += 1;
