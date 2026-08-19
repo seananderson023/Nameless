@@ -196,7 +196,7 @@
 
     .combat-panel {
       padding: 13px 16px;
-      min-height: 132px;
+      height: 170px;
     }
 
     .combat-heading {
@@ -248,11 +248,30 @@
     }
 
     @keyframes flash {
-      0% { filter: drop-shadow(0 16px 12px rgba(0,0,0,.7)); }
-      45% { filter: brightness(1.7) sepia(.4) drop-shadow(0 0 18px rgba(255,255,255,.55)); }
-      100% { filter: drop-shadow(0 16px 12px rgba(0,0,0,.7)); }
-    }
+      0% { 
+        filter: drop-shadow(0 16px 12px rgba(0,0,0,.7));
+    transform: translateX(0);
+  }
 
+  30% {
+    filter:
+      sepia(1)
+      saturate(4)
+      hue-rotate(-25deg)
+      brightness(1.1)
+      drop-shadow(0 0 12px rgba(180,40,20,.7));
+    transform: translateX(-6px);
+  }
+
+  60% {
+    transform: translateX(4px);
+  }
+
+  100% {
+    filter: drop-shadow(0 16px 12px rgba(0,0,0,.7));
+    transform: translateX(0);
+  }
+}
     @media (max-width: 760px) {
       .battle { padding: 8px; }
       .hud-row {
