@@ -193,6 +193,42 @@
       backdrop-filter: blur(3px);
     }
 
+    .tally-bar {
+      width: min(670px, 88vw);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .tally-item {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 10px;
+      color: var(--ink);
+      background: rgba(13,14,12,.82);
+      border: 1px solid rgba(185,138,69,.62);
+      border-radius: 10px;
+      backdrop-filter: blur(3px);
+    }
+
+    .tally-item img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,.65));
+    }
+
+    .tally-count {
+      min-width: 1.4em;
+      font-size: 1.15rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
     @keyframes invalidSwap {
       0%, 100% { transform: translateX(0); }
       30% { transform: translateX(-5px); }
@@ -232,6 +268,26 @@
       .message {
         width: 95vw;
       }
+
+      .tally-bar {
+        width: 95vw;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+      }
+
+      .tally-item {
+        padding: 6px 4px;
+        gap: 3px;
+      }
+
+      .tally-item img {
+        width: 28px;
+        height: 28px;
+      }
+
+      .tally-count {
+        font-size: .95rem;
+      }
     }
   </style>
 </head>
@@ -260,6 +316,29 @@
       Select a tile, then select an adjacent tile to swap.
     </div>
 
+    <section class="tally-bar" aria-label="Matched tile totals">
+      <div class="tally-item" title="Sword tiles matched">
+        <img src="tile-sword.png" alt="Sword">
+        <span id="count-sword" class="tally-count">0</span>
+      </div>
+      <div class="tally-item" title="Magic tiles matched">
+        <img src="tile-magic.png" alt="Magic">
+        <span id="count-magic" class="tally-count">0</span>
+      </div>
+      <div class="tally-item" title="Chest tiles matched">
+        <img src="tile-chest.png" alt="Chest">
+        <span id="count-chest" class="tally-count">0</span>
+      </div>
+      <div class="tally-item" title="Shield tiles matched">
+        <img src="tile-shield.png" alt="Shield">
+        <span id="count-shield" class="tally-count">0</span>
+      </div>
+      <div class="tally-item" title="Potion tiles matched">
+        <img src="tile-potion.png" alt="Potion">
+        <span id="count-potion" class="tally-count">0</span>
+      </div>
+    </section>
+
   </main>
 
   <script>
@@ -269,7 +348,9 @@
     const TILE_TYPES = [
       { id: "sword", image: "tile-sword.png", label: "Sword" },
       { id: "magic", image: "tile-magic.png", label: "Magic" },
-      { id: "chest", image: "tile-chest.png", label: "Chest" }
+      { id: "chest", image: "tile-chest.png", label: "Chest" },
+      { id: "shield", image: "tile-shield.png", label: "Shield" },
+      { id: "potion", image: "tile-potion.png", label: "Potion" }
     ];
 
     const boardElement = document.getElementById("board");
@@ -282,6 +363,21 @@
     let busy = false;
     let moves = 0;
     let matchesCleared = 0;
+
+    const tileTotals = {
+      sword: 0,
+      magic: 0,
+      chest: 0,
+      shield: 0,
+      potion: 0
+    };
+
+    function updateTileTotalsDisplay() {
+      for (const [type, total] of Object.entries(tileTotals)) {
+        const element = document.getElementById(`count-${type}`);
+        if (element) element.textContent = total;
+      }
+    }
 
     function randomTileId() {
       return TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)].id;
@@ -497,6 +593,14 @@
         matchesCleared += currentMatches.size;
         matchesElement.textContent = matchesCleared;
 
+        currentMatches.forEach(index => {
+          const type = board[index];
+          if (type && Object.prototype.hasOwnProperty.call(tileTotals, type)) {
+            tileTotals[type] += 1;
+          }
+        });
+        updateTileTotalsDisplay();
+
         messageElement.textContent =
           cascade === 1
             ? `${currentMatches.size} tiles matched!`
@@ -581,6 +685,7 @@
 
     buildStartingBoard();
     renderBoard();
+    updateTileTotalsDisplay();
   </script>
 </body>
 </html>
