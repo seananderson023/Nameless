@@ -493,56 +493,101 @@
       showLog(lines);
     }
 
-    function takeTurn() {
-      if (fightOver) return;
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
-      const lines = [];
+    async function takeTurn() {
+      if (fightOver || attackButton.disabled) return;
 
-      // HERO: d20 to hit
+      attackButton.disabled = true;
+      attackButton.textContent = "RESOLVING...";
+
       const heroToHit = rollDie(20);
-      lines.push({ text: `The Nameless rolls ${heroToHit} on the d20.` });
+
+      showLog([
+        { text: `The Nameless rolls ${heroToHit} on the d20.` }
+      ]);
+
+      await wait(650);
 
       if (heroToHit >= GOBLIN_DEFENSE) {
         const heroDamage = rollDie(HERO_DAMAGE_DIE);
+
+        showLog([
+          { text: `The Nameless rolls ${heroToHit} on the d20.` },
+          { text: `HIT — the sword deals ${heroDamage} damage.`, className: "hit" }
+        ]);
+
         goblinHp = Math.max(0, goblinHp - heroDamage);
-        lines.push({ text: `HIT — the sword deals ${heroDamage} damage.`, className: "hit" });
         flashCharacter(goblinImage);
         showDamage(goblinDamageText, heroDamage);
         updateHud();
 
+        await wait(800);
+
         if (goblinHp <= 0) {
-          finishFight("victory", lines);
+          finishFight("victory", [
+            { text: `The Nameless rolls ${heroToHit} on the d20.` },
+            { text: `HIT — the sword deals ${heroDamage} damage.`, className: "hit" }
+          ]);
           return;
         }
       } else {
-        lines.push({ text: "MISS — the goblin slips away from the blade.", className: "miss" });
+        showLog([
+          { text: `The Nameless rolls ${heroToHit} on the d20.` },
+          { text: "MISS — the goblin slips away from the blade.", className: "miss" }
+        ]);
+
         showMiss(goblinDamageText);
+        await wait(800);
       }
 
-      // GOBLIN: d20 to hit
       const goblinToHit = rollDie(20);
-      lines.push({ text: `The Goblin rolls ${goblinToHit} on the d20.` });
+
+      showLog([
+        { text: `The Goblin rolls ${goblinToHit} on the d20.` }
+      ]);
+
+      await wait(650);
 
       if (goblinToHit >= HERO_DEFENSE) {
         const goblinDamage = rollDie(GOBLIN_DAMAGE_DIE);
+
+        showLog([
+          { text: `The Goblin rolls ${goblinToHit} on the d20.` },
+          { text: `HIT — the goblin deals ${goblinDamage} damage.`, className: "hit" }
+        ]);
+
         heroHp = Math.max(0, heroHp - goblinDamage);
-        lines.push({ text: `HIT — the goblin deals ${goblinDamage} damage.`, className: "hit" });
         flashCharacter(heroImage);
         showDamage(heroDamageText, goblinDamage);
         updateHud();
 
+        await wait(800);
+
         if (heroHp <= 0) {
-          finishFight("defeat", lines);
+          finishFight("defeat", [
+            { text: `The Goblin rolls ${goblinToHit} on the d20.` },
+            { text: `HIT — the goblin deals ${goblinDamage} damage.`, className: "hit" }
+          ]);
           return;
         }
       } else {
-        lines.push({ text: "MISS — the goblin's attack goes wide.", className: "miss" });
+        showLog([
+          { text: `The Goblin rolls ${goblinToHit} on the d20.` },
+          { text: "MISS — the goblin's attack goes wide.", className: "miss" }
+        ]);
+
         showMiss(heroDamageText);
+        await wait(800);
       }
 
       turn += 1;
       updateHud();
-      showLog(lines);
+
+      attackButton.disabled = false;
+      attackButton.textContent = "🎲 ROLL TO ATTACK";
     }
 
     function resetFight() {
