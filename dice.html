@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nameless — Roll Dice</title>
+  <style>
+    :root {
+      --ink: #efe2c8;
+      --muted: #ccbda0;
+      --bronze: #9c7747;
+      --bronze-light: #d7b27a;
+      --panel: rgba(18, 17, 14, 0.84);
+      --panel-soft: rgba(23, 22, 19, 0.72);
+      --accent: #b53b2f;
+      --glow: rgba(244, 198, 121, 0.55);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background: #0b0b0a;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.48)),
+        url("dice-room-bg.jpg") center / cover no-repeat fixed;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .screen {
+      width: min(1000px, 95vw);
+      background: var(--panel);
+      border: 2px solid var(--bronze);
+      border-radius: 20px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.05),
+        0 24px 60px rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3rem);
+      letter-spacing: 0.06em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+    }
+
+    .topbar a {
+      color: var(--ink);
+      text-decoration: none;
+      background: rgba(22,21,18,0.95);
+      border: 2px solid var(--bronze);
+      border-radius: 10px;
+      padding: 10px 16px;
+      letter-spacing: 0.08em;
+    }
+
+    .topbar a:hover {
+      background: rgba(56,48,37,0.95);
+    }
+
+    .roller-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+    }
+
+    .side-panel,
+    .result-panel {
+      background: var(--panel-soft);
+      border: 2px solid var(--bronze);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .panel-heading {
+      font-size: 0.88rem;
+      letter-spacing: 0.14em;
+      color: var(--bronze-light);
+      margin-bottom: 12px;
+    }
+
+    .die-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .die-button,
+    .roll-button {
+      font: inherit;
+      color: var(--ink);
+      background: rgba(20,20,18,0.95);
+      border: 2px solid var(--bronze);
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .die-button {
+      padding: 14px 12px;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+    }
+
+    .die-button.active {
+      background: linear-gradient(rgba(69,48,31,0.95), rgba(37,30,25,0.95));
+      border-color: var(--bronze-light);
+      box-shadow: 0 0 18px rgba(212,170,108,0.18);
+    }
+
+    .roll-button {
+      width: 100%;
+      padding: 16px 18px;
+      margin-top: 16px;
+      font-size: 1.2rem;
+      letter-spacing: 0.12em;
+      background: linear-gradient(#313245, #1b1f2b);
+      border-color: var(--bronze-light);
+    }
+
+    .roll-button:hover:not(:disabled),
+    .die-button:hover {
+      filter: brightness(1.08);
+    }
+
+    .roll-button:disabled {
+      cursor: default;
+      opacity: 0.8;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.35;
+      margin-top: 14px;
+    }
+
+    .result-panel {
+      min-height: 440px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .rolling-label {
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+
+    .die-stage {
+      display: grid;
+      place-items: center;
+      min-height: 240px;
+      position: relative;
+    }
+
+    .die-ring {
+      width: min(240px, 55vw);
+      height: min(240px, 55vw);
+      border-radius: 50%;
+      border: 3px solid rgba(201,166,104,0.55);
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.04), rgba(0,0,0,0.08)),
+        rgba(26,22,19,0.75);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.04),
+        0 0 28px rgba(0,0,0,0.35);
+    }
+
+    .die-core {
+      width: 72%;
+      height: 72%;
+      border-radius: 22px;
+      border: 2px solid rgba(215,178,122,0.6);
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(rgba(58,43,28,0.55), rgba(25,21,18,0.82));
+      box-shadow: 0 0 22px rgba(244,198,121,0.12);
+      transition: transform 0.18s ease;
+    }
+
+    .die-value {
+      font-size: clamp(4rem, 10vw, 7rem);
+      font-weight: bold;
+      line-height: 1;
+      text-shadow:
+        0 4px 10px rgba(0,0,0,0.85),
+        0 0 18px rgba(244,198,121,0.12);
+    }
+
+    .die-core.rolling {
+      animation: wobble 0.16s linear infinite alternate;
+      box-shadow:
+        0 0 28px rgba(244,198,121,0.28),
+        0 0 45px rgba(181,59,47,0.14);
+    }
+
+    .die-core.land {
+      animation: land 0.28s ease;
+    }
+
+    .result-text {
+      min-height: 2em;
+      color: var(--muted);
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+    }
+
+    @keyframes wobble {
+      from { transform: rotate(-4deg) scale(1.02); }
+      to   { transform: rotate(4deg) scale(0.98); }
+    }
+
+    @keyframes land {
+      0%   { transform: scale(0.88); }
+      70%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 780px) {
+      .roller-grid {
+        grid-template-columns: 1fr;
+      }
+      .screen { padding: 16px; }
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .topbar a {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <div class="topbar">
+      <div class="title-wrap">
+        <h1>ROLL DICE</h1>
+        <div class="subtitle">A simple Worn Storybook dice room prototype</div>
+      </div>
+      <a href="index.html">BACK TO MENU</a>
+    </div>
+
+    <section class="roller-grid">
+      <aside class="side-panel">
+        <div class="panel-heading">CHOOSE A DIE</div>
+        <div class="die-buttons">
+          <button class="die-button" data-sides="4">d4</button>
+          <button class="die-button active" data-sides="6">d6</button>
+          <button class="die-button" data-sides="8">d8</button>
+          <button class="die-button" data-sides="10">d10</button>
+          <button class="die-button" data-sides="12">d12</button>
+          <button class="die-button" data-sides="20">d20</button>
+        </div>
+
+        <button id="rollButton" class="roll-button" type="button">ROLL</button>
+
+        <div class="note">
+          This page is just for nailing down the look and feel of dice rolling.
+          Later, the same style can be embedded into combat, stat rolling, or any other scene.
+        </div>
+      </aside>
+
+      <section class="result-panel">
+        <div id="rollingLabel" class="rolling-label">READY TO ROLL d6</div>
+
+        <div class="die-stage">
+          <div class="die-ring">
+            <div id="dieCore" class="die-core">
+              <div id="dieValue" class="die-value">6</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultText" class="result-text">Fate waits.</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const dieButtons = document.querySelectorAll(".die-button");
+    const rollButton = document.getElementById("rollButton");
+    const rollingLabel = document.getElementById("rollingLabel");
+    const dieCore = document.getElementById("dieCore");
+    const dieValue = document.getElementById("dieValue");
+    const resultText = document.getElementById("resultText");
+
+    let selectedSides = 6;
+    let rolling = false;
+
+    function randomInt(max) {
+      return Math.floor(Math.random() * max) + 1;
+    }
+
+    function setActiveDie(button) {
+      dieButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+      selectedSides = Number(button.dataset.sides);
+      rollingLabel.textContent = `READY TO ROLL d${selectedSides}`;
+      resultText.textContent = "Fate waits.";
+      dieValue.textContent = selectedSides;
+    }
+
+    async function rollSelectedDie() {
+      if (rolling) return;
+      rolling = true;
+      rollButton.disabled = true;
+      rollButton.textContent = "ROLLING...";
+
+      rollingLabel.textContent = `ROLLING d${selectedSides}`;
+      resultText.textContent = "Casting fate...";
+      dieCore.classList.remove("land");
+      dieCore.classList.add("rolling");
+
+      const flickers = 12;
+      for (let i = 0; i < flickers; i++) {
+        dieValue.textContent = randomInt(selectedSides);
+        await new Promise(resolve => setTimeout(resolve, 85));
+      }
+
+      const finalRoll = randomInt(selectedSides);
+
+      dieCore.classList.remove("rolling");
+      void dieCore.offsetWidth;
+      dieCore.classList.add("land");
+
+      dieValue.textContent = finalRoll;
+      rollingLabel.textContent = `d${selectedSides} RESULT`;
+      resultText.textContent = `You rolled a ${finalRoll}.`;
+
+      rollButton.disabled = false;
+      rollButton.textContent = "ROLL";
+      rolling = false;
+    }
+
+    dieButtons.forEach(button => {
+      button.addEventListener("click", () => setActiveDie(button));
+    });
+
+    rollButton.addEventListener("click", rollSelectedDie);
+  </script>
+</body>
+</html>

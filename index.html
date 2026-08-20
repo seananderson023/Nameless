@@ -9,7 +9,7 @@
     html, body { margin: 0; min-height: 100%; }
     body {
       min-height: 100vh;
-      font-family: Georgia, "Georgia", serif;
+      font-family: Georgia, "Times New Roman", serif;
       color: #f5ead4;
       background:
         linear-gradient(rgba(0,0,0,.15), rgba(0,0,0,.38)),
@@ -29,21 +29,27 @@
       backdrop-filter: blur(4px);
     }
     h1 {
-      margin: 0 0 1.5rem;
-      font-size: clamp(3rem, 5vw, 5rem);
-      letter-spacing: .08em;
+      margin: 0 0 1.2rem;
+      font-size: clamp(3rem, 6.5vw, 5.5rem);
+      letter-spacing: 0.05em;
       text-shadow: 0 4px 15px #000;
+    }
+    .menu-buttons {
+      display: grid;
+      gap: 0.85rem;
+      width: min(320px, 100%);
+      margin: 0 auto;
     }
     a {
       display: inline-block;
-      padding: .9rem 2.5rem;
+      padding: .9rem 2.2rem;
       color: #f5ead4;
       text-decoration: none;
       border: 1px solid #b99b68;
       border-radius: 8px;
       background: rgba(20, 24, 20, .88);
       letter-spacing: .12em;
-      font-size: 1.15rem;
+      font-size: 1.05rem;
     }
     a:hover { background: rgba(57, 55, 41, .95); }
   </style>
@@ -51,7 +57,10 @@
 <body>
   <main class="menu">
     <h1>NAMELESS</h1>
-    <a href="battle.html">ENTER</a>
+    <div class="menu-buttons">
+      <a href="battle.html">ENTER</a>
+      <a href="dice.html">ROLL DICE</a>
+    </div>
   </main>
 </body>
 </html>
