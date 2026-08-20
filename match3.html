@@ -632,6 +632,16 @@
 
     const SWIPE_THRESHOLD = 24;
 
+    const tileSwapSound = new Audio("tileswap.mp3");
+    tileSwapSound.preload = "auto";
+
+    function playTileSwapSound() {
+      tileSwapSound.currentTime = 0;
+      tileSwapSound.play().catch(() => {
+        // Browsers may block audio until the player has interacted with the page.
+      });
+    }
+
     function beginSwipe(event, index, tileElement) {
       if (busy) return;
 
@@ -714,6 +724,7 @@
 
       swapValues(first, second);
       renderBoard();
+      playTileSwapSound();
 
       await wait(180);
 
